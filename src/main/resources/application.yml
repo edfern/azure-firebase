@@ -1,0 +1,11 @@
+microsoft:
+  azure:
+    key: "2a977727e4a6495d928cd7873e1a4553"
+    endpoint: "https://ingenieria-sistemas.cognitiveservices.azure.com/"
+server:
+  port: 8084
+
+spring:
+  mvc:
+    converters:
+      preferred-json-mapper: gson
