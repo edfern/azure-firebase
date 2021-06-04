@@ -5,8 +5,11 @@ import gt.edu.umg.sistemas.ingenieria.is.taller.azure_firebase_is.model.computer
 import gt.edu.umg.sistemas.ingenieria.is.taller.azure_firebase_is.model.computer_vision.dto.ResponseDto;
 import gt.edu.umg.sistemas.ingenieria.is.taller.azure_firebase_is.model.computer_vision.dto.ResponseError;
 import gt.edu.umg.sistemas.ingenieria.is.taller.azure_firebase_is.model.computer_vision.dto.ResponseSuccess;
+import gt.edu.umg.sistemas.ingenieria.is.taller.azure_firebase_is.model.computer_vision.exception.CustomException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import static gt.edu.umg.sistemas.ingenieria.is.taller.azure_firebase_is.model.globalconfig.Config.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,16 +17,20 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
+
+
 @Service
 public class ImageAnalysisService implements IAlgorithmService{
 
     @Autowired
     ClientComputerVision client;
 
-    @Override
-    public ResponseDto getAlgorithm() {
+    @Autowired
+    ImageService imgService;
 
-        String path = "src\\main\\resources\\brand.jpg";
+    @Override
+    public ResponseDto getAlgorithm(MultipartFile file) {
+
         List<VisualFeatureTypes> featuresToExtractFromLocalImage  = new ArrayList<>();
         featuresToExtractFromLocalImage.add(VisualFeatureTypes.DESCRIPTION);
         featuresToExtractFromLocalImage.add(VisualFeatureTypes.CATEGORIES);
@@ -36,15 +43,15 @@ public class ImageAnalysisService implements IAlgorithmService{
         featuresToExtractFromLocalImage.add(VisualFeatureTypes.IMAGE_TYPE);
 
         try{
-            File file = new File(path);
-            byte[] imageBytes = Files.readAllBytes(file.toPath());
+            File image = new File(imgService.convertMultipartFileToImage(file));
+            byte[] imageBytes = Files.readAllBytes(image.toPath());
 
             ImageAnalysis analysis = client.getClient().computerVision()
                     .analyzeImageInStream()
                     .withImage(imageBytes)
                     .withVisualFeatures(featuresToExtractFromLocalImage).execute();
 
-            return new ResponseSuccess(200,"SUCCESS",
+            return new ResponseSuccess(200,SUCCESS_AZURE,
                     analysis.description().captions(),analysis.tags(),
                     analysis.faces(),
                     analysis.brands(),
@@ -53,8 +60,9 @@ public class ImageAnalysisService implements IAlgorithmService{
                     analysis.imageType().clipArtType()
                     );
         } catch (IOException e) {
-            e.printStackTrace();
-            return new ResponseError(400,"error");
+            throw new CustomException(500,ERROR_AZURE);
+        } catch (ComputerVisionErrorResponseException ex){
+            throw new CustomException(500, ERROR_CLIENT);
         }
     }
 }

@@ -1,12 +1,15 @@
 package gt.edu.umg.sistemas.ingenieria.is.taller.azure_firebase_is.controller;
 
 import gt.edu.umg.sistemas.ingenieria.is.taller.azure_firebase_is.model.computer_vision.dto.ResponseDto;
+import gt.edu.umg.sistemas.ingenieria.is.taller.azure_firebase_is.model.computer_vision.dto.ResponseError;
+import gt.edu.umg.sistemas.ingenieria.is.taller.azure_firebase_is.model.computer_vision.exception.CustomException;
 import gt.edu.umg.sistemas.ingenieria.is.taller.azure_firebase_is.model.computer_vision.service.ComputerVisionService;
 import gt.edu.umg.sistemas.ingenieria.is.taller.azure_firebase_is.model.computer_vision.service.ImageAnalysisService;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 
 @RestController
 public class AzureController {
@@ -17,9 +20,14 @@ public class AzureController {
     @Autowired
     ImageAnalysisService imageAnalysisService;
 
-    @RequestMapping( value = "/analysis", method = RequestMethod.GET, produces = "application/json")
-    public ResponseDto imageAnalysis(){
-        ComputerVisionService service = new ComputerVisionService();
-        return service.service(imageAnalysisService);
+
+    @CrossOrigin
+    @RequestMapping( value = "/analysis", method = RequestMethod.POST, produces = "application/json")
+    public ResponseDto imageAnalysis(@RequestParam MultipartFile file) {
+        try {
+            return service.service(imageAnalysisService, file);
+        }catch (CustomException ex){
+            return new ResponseError(ex.getStatus(),ex.getMessage());
+        }
     }
 }
